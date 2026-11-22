@@ -1,0 +1,2152 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>For Sabina ♥</title>
+  <meta name="description" content="A 3D ASCII Bouquet of Peonies for Sabina">
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: radial-gradient(circle at 50% 36%, #10152b 0%, #070913 58%, #04050a 100%);
+      font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
+      color: #fff;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+
+    #bouquetCanvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      cursor: grab;
+      z-index: 1;
+    }
+
+    #bouquetCanvas:active {
+      cursor: grabbing;
+    }
+
+
+    .vignette-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      background: radial-gradient(ellipse at center, transparent 45%, rgba(3, 4, 8, 0.75) 100%);
+      z-index: 2;
+    }
+
+
+    .top-controls {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      right: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      z-index: 20;
+      pointer-events: none;
+    }
+
+
+    .record-player-dock {
+      pointer-events: auto;
+      background: rgba(18, 22, 38, 0.65);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 20px;
+      padding: 10px 14px 10px 12px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+      transition: all 0.3s ease;
+    }
+
+    .record-player-dock:hover {
+      background: rgba(22, 28, 48, 0.82);
+      border-color: rgba(255, 149, 180, 0.3);
+      box-shadow: 0 14px 40px rgba(255, 93, 143, 0.15), 0 8px 24px rgba(0, 0, 0, 0.6);
+    }
+
+
+    .turntable {
+      position: relative;
+      width: 66px;
+      height: 66px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+
+    .vinyl-disc {
+      position: relative;
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #252528 0%, #161618 35%, #0d0d0f 70%, #050505 100%);
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.8), inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.4s ease-out;
+    }
+
+
+    .vinyl-disc::before {
+      content: '';
+      position: absolute;
+      inset: 4px;
+      border-radius: 50%;
+      border: 1px dashed rgba(255, 255, 255, 0.08);
+      box-shadow:
+        0 0 0 3px #18181a,
+        0 0 0 5px rgba(255, 255, 255, 0.05),
+        0 0 0 8px #121214,
+        0 0 0 11px rgba(255, 255, 255, 0.04),
+        0 0 0 14px #151517;
+      pointer-events: none;
+    }
+
+
+    .vinyl-disc.is-spinning {
+      animation: spinVinyl 3.6s linear infinite;
+    }
+
+    @keyframes spinVinyl {
+      from {
+        transform: rotate(0deg);
+      }
+
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+
+    .vinyl-photo-label {
+      position: relative;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      overflow: hidden;
+      border: 1.5px solid #d4af37;
+      box-shadow: 0 0 6px rgba(212, 175, 55, 0.6);
+      background: #331520;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2;
+    }
+
+    .vinyl-photo-label img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+
+    .vinyl-spindle-hole {
+      position: absolute;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #000;
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      z-index: 3;
+    }
+
+
+    .tonearm {
+      position: absolute;
+      top: 0px;
+      right: -2px;
+      width: 24px;
+      height: 38px;
+      transform-origin: 20px 4px;
+      transform: rotate(0deg);
+      transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+      pointer-events: none;
+      z-index: 4;
+    }
+
+    .tonearm.is-playing {
+      transform: rotate(26deg);
+    }
+
+    .tonearm-pivot {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #d8d8d8, #606060);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+    }
+
+    .tonearm-bar {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      width: 2px;
+      height: 30px;
+      background: linear-gradient(to bottom, #d0d0d0, #909090);
+    }
+
+    .tonearm-cartridge {
+      position: absolute;
+      bottom: 0;
+      right: 1px;
+      width: 7px;
+      height: 10px;
+      background: #c92a2a;
+      border-radius: 1px;
+      transform: rotate(18deg);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    }
+
+
+    .player-details {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .track-meta {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .track-title {
+      font-size: 11px;
+      font-weight: 600;
+      color: #ffe5ec;
+      letter-spacing: 0.03em;
+      white-space: nowrap;
+      text-shadow: 0 0 10px rgba(255, 93, 143, 0.4);
+    }
+
+    .sound-bars {
+      display: flex;
+      align-items: flex-end;
+      gap: 2px;
+      height: 10px;
+    }
+
+    .sound-bar {
+      width: 2px;
+      height: 3px;
+      background: #ff5d8f;
+      border-radius: 1px;
+      transition: height 0.2s ease;
+    }
+
+    .sound-bars.active .sound-bar:nth-child(1) {
+      animation: soundWave 0.7s infinite alternate ease-in-out;
+    }
+
+    .sound-bars.active .sound-bar:nth-child(2) {
+      animation: soundWave 0.5s 0.2s infinite alternate ease-in-out;
+    }
+
+    .sound-bars.active .sound-bar:nth-child(3) {
+      animation: soundWave 0.9s 0.4s infinite alternate ease-in-out;
+    }
+
+    @keyframes soundWave {
+      0% {
+        height: 2px;
+      }
+
+      100% {
+        height: 11px;
+      }
+    }
+
+    .player-controls-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .play-btn {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      border: none;
+      background: linear-gradient(135deg, #ff758f, #e63946);
+      color: #fff;
+      font-size: 10px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 3px 10px rgba(230, 57, 70, 0.4);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .play-btn:hover {
+      transform: scale(1.08);
+      box-shadow: 0 4px 14px rgba(255, 93, 143, 0.6);
+    }
+
+    .play-btn:active {
+      transform: scale(0.95);
+    }
+
+    .volume-box {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .vol-icon {
+      font-size: 11px;
+      color: #ffb3c1;
+      opacity: 0.85;
+    }
+
+    .volume-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 58px;
+      height: 3px;
+      border-radius: 2px;
+      background: rgba(255, 255, 255, 0.22);
+      outline: none;
+      cursor: pointer;
+    }
+
+    .volume-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #ff758f;
+      box-shadow: 0 0 8px rgba(255, 117, 143, 0.8);
+      cursor: pointer;
+    }
+
+    .volume-slider::-moz-range-thumb {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #ff758f;
+      border: none;
+      box-shadow: 0 0 8px rgba(255, 117, 143, 0.8);
+      cursor: pointer;
+    }
+
+
+    .palette-btn {
+      pointer-events: auto;
+      background: rgba(20, 24, 40, 0.65);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 999px;
+      padding: 9px 18px;
+      color: #ffe5ec;
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.05em;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.4);
+      transition: all 0.25s ease;
+    }
+
+    .palette-btn:hover {
+      background: rgba(28, 34, 56, 0.85);
+      border-color: rgba(255, 149, 180, 0.35);
+      box-shadow: 0 10px 32px rgba(255, 93, 143, 0.2);
+      transform: translateY(-1px);
+    }
+
+    .palette-btn:active {
+      transform: translateY(1px);
+    }
+
+    .palette-indicator {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #ff5d8f;
+      box-shadow: 0 0 8px #ff5d8f;
+      display: inline-block;
+    }
+
+
+    .envelope-dock {
+      position: fixed;
+      bottom: 95px;
+      left: 28px;
+      z-index: 25;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 7px;
+      cursor: pointer;
+      animation: floatGentle 3.8s ease-in-out infinite;
+      transition: transform 0.25s ease;
+    }
+
+    .envelope-dock:hover {
+      transform: scale(1.08) translateY(-4px);
+    }
+
+    @keyframes floatGentle {
+
+      0%,
+      100% {
+        transform: translateY(0);
+      }
+
+      50% {
+        transform: translateY(-7px);
+      }
+    }
+
+    .envelope-box {
+      position: relative;
+      width: 62px;
+      height: 44px;
+      background: linear-gradient(145deg, #fceddb, #e8d0bd);
+      border-radius: 6px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.65), 0 2px 8px rgba(255, 180, 195, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+
+    .envelope-box::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 0;
+      height: 0;
+      border-left: 31px solid transparent;
+      border-right: 31px solid transparent;
+      border-top: 24px solid #f2decb;
+      filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.18));
+      z-index: 2;
+    }
+
+    .envelope-box::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 0;
+      height: 0;
+      border-left: 31px solid #dfc3aa;
+      border-right: 31px solid #dfc3aa;
+      border-top: 20px solid transparent;
+      border-bottom: 24px solid #ebd2be;
+      z-index: 1;
+    }
+
+
+    .envelope-seal {
+      position: absolute;
+      top: 15px;
+      width: 17px;
+      height: 17px;
+      background: radial-gradient(circle, #e63946 30%, #a8122e 100%);
+      border-radius: 50%;
+      z-index: 5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 9px;
+      color: #fff;
+      box-shadow: 0 2px 6px rgba(168, 18, 46, 0.6);
+    }
+
+    .envelope-badge {
+      background: rgba(18, 22, 38, 0.8);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      padding: 3px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 182, 193, 0.3);
+      font-size: 10px;
+      color: #ffe5ec;
+      letter-spacing: 0.05em;
+      white-space: nowrap;
+      text-shadow: 0 0 6px rgba(255, 93, 143, 0.6);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    }
+
+
+    .letter-modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(3, 4, 8, 0.72);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.4s ease;
+    }
+
+    .letter-modal-backdrop.is-open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .letter-card {
+      position: relative;
+      width: 100%;
+      max-width: 480px;
+      max-height: 82vh;
+      overflow-y: auto;
+      background: linear-gradient(160deg, #fbf7ee 0%, #f6eee0 100%);
+      border-radius: 14px;
+      padding: 34px 30px 28px 30px;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(212, 175, 55, 0.35);
+      color: #382823;
+      transform: translateY(35px) scale(0.92);
+      transition: transform 0.45s cubic-bezier(0.18, 0.89, 0.32, 1.15);
+    }
+
+    .letter-modal-backdrop.is-open .letter-card {
+      transform: translateY(0) scale(1);
+    }
+
+    .letter-stamp-corner {
+      position: absolute;
+      top: 18px;
+      right: 22px;
+      width: 40px;
+      height: 48px;
+      border: 1px dashed rgba(180, 140, 100, 0.4);
+      border-radius: 3px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 9px;
+      color: #a07855;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .letter-stamp-heart {
+      font-size: 16px;
+      color: #e63946;
+      margin-bottom: 2px;
+    }
+
+    .letter-header {
+      margin-bottom: 20px;
+      border-bottom: 1px solid rgba(180, 140, 120, 0.25);
+      padding-bottom: 12px;
+    }
+
+    .letter-recipient {
+      font-family: "Georgia", serif;
+      font-size: 22px;
+      font-style: italic;
+      color: #2b1810;
+      margin-bottom: 4px;
+    }
+
+    .letter-date {
+      font-size: 11px;
+      color: #8c7365;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .letter-body {
+      font-family: "Georgia", "Times New Roman", serif;
+      font-size: 15px;
+      line-height: 1.75;
+      color: #3d2a23;
+      white-space: pre-wrap;
+      margin-bottom: 24px;
+      text-align: left;
+    }
+
+    .letter-sign {
+      font-family: "Georgia", serif;
+      font-size: 17px;
+      font-style: italic;
+      color: #c1121f;
+      text-align: right;
+      margin-top: 10px;
+    }
+
+    .letter-close-btn {
+      display: block;
+      margin: 22px auto 0;
+      padding: 9px 24px;
+      border-radius: 999px;
+      border: 1px solid rgba(180, 120, 100, 0.35);
+      background: rgba(255, 255, 255, 0.7);
+      color: #5c3c2e;
+      font-family: inherit;
+      font-size: 12px;
+      letter-spacing: 0.05em;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    }
+
+    .letter-close-btn:hover {
+      background: #c1121f;
+      color: #fff;
+      border-color: #c1121f;
+      box-shadow: 0 4px 14px rgba(193, 18, 31, 0.35);
+    }
+
+
+    .bottom-caption-veil {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 38px 24px 28px 24px;
+      background: linear-gradient(to top, rgba(4, 5, 10, 0.96) 0%, rgba(4, 5, 10, 0.75) 60%, transparent 100%);
+      z-index: 10;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      gap: 7px;
+    }
+
+    .caption-line-1 {
+      font-size: 13px;
+      letter-spacing: 0.04em;
+      color: #f7d6e0;
+      text-shadow: 0 0 12px rgba(255, 93, 143, 0.55);
+      min-height: 1.4em;
+      opacity: 0;
+      transition: opacity 0.8s ease;
+    }
+
+    .caption-line-2 {
+      font-size: 16px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      color: #ffe5ec;
+      text-shadow: 0 0 16px rgba(255, 117, 143, 0.8), 0 0 32px rgba(255, 77, 109, 0.4);
+      min-height: 1.4em;
+      opacity: 0;
+      transition: opacity 0.8s ease;
+    }
+
+    .type-cursor {
+      display: inline-block;
+      width: 7px;
+      height: 14px;
+      background: #ff758f;
+      margin-left: 3px;
+      vertical-align: middle;
+      animation: blinkCursor 0.9s steps(1) infinite;
+    }
+
+    @keyframes blinkCursor {
+      50% {
+        opacity: 0;
+      }
+    }
+
+
+    .drag-hint {
+      position: fixed;
+      bottom: 74px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: rgba(255, 200, 220, 0.35);
+      pointer-events: none;
+      z-index: 12;
+      animation: pulseHint 3s infinite ease-in-out;
+    }
+
+    @keyframes pulseHint {
+
+      0%,
+      100% {
+        opacity: 0.2;
+      }
+
+      50% {
+        opacity: 0.65;
+      }
+    }
+
+
+    @media (max-width: 600px) {
+      .top-controls {
+        top: 14px;
+        left: 14px;
+        right: 14px;
+      }
+
+      .record-player-dock {
+        padding: 8px 10px;
+        gap: 10px;
+        border-radius: 16px;
+      }
+
+      .turntable {
+        width: 52px;
+        height: 52px;
+      }
+
+      .vinyl-disc {
+        width: 50px;
+        height: 50px;
+      }
+
+      .vinyl-photo-label {
+        width: 22px;
+        height: 22px;
+      }
+
+      .tonearm {
+        width: 18px;
+        height: 30px;
+      }
+
+      .volume-slider {
+        width: 44px;
+      }
+
+      .palette-btn {
+        padding: 7px 12px;
+        font-size: 10px;
+      }
+
+      .palette-name {
+        display: none;
+      }
+
+      .envelope-dock {
+        left: 16px;
+        bottom: 84px;
+      }
+
+      .caption-line-1 {
+        font-size: 11px;
+      }
+
+      .caption-line-2 {
+        font-size: 14px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+
+  <canvas id="bouquetCanvas"></canvas>
+
+
+  <div class="vignette-overlay"></div>
+
+
+  <div class="drag-hint" id="dragHint"></div>
+
+
+  <header class="top-controls">
+
+    <div class="record-player-dock" id="recordPlayerDock" title="Vinyl Record Player">
+      <div class="turntable">
+        <div class="vinyl-disc" id="vinylDisc">
+          <div class="vinyl-photo-label">
+            <img id="vinylPhotoImg" src="our_photo.jpeg" alt="Vinyl Photo"
+              onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'40\' height=\'40\' viewBox=\'0 0 40 40\'><rect width=\'40\' height=\'40\' fill=\'%23501025\'/><circle cx=\'20\' cy=\'20\' r=\'12\' fill=\'%23ff758f\'/><circle cx=\'20\' cy=\'20\' r=\'6\' fill=\'%23ffd166\'/></svg>'">
+            <div class="vinyl-spindle-hole"></div>
+          </div>
+        </div>
+
+        <div class="tonearm" id="tonearm">
+          <div class="tonearm-pivot"></div>
+          <div class="tonearm-bar"></div>
+          <div class="tonearm-cartridge"></div>
+        </div>
+      </div>
+
+      <div class="player-details">
+        <div class="track-meta">
+          <span class="track-title" id="trackTitle">Sabina's Melody</span>
+          <div class="sound-bars" id="soundBars">
+            <div class="sound-bar"></div>
+            <div class="sound-bar"></div>
+            <div class="sound-bar"></div>
+          </div>
+        </div>
+        <div class="player-controls-row">
+          <button class="play-btn" id="playBtn" aria-label="Play / Pause">▶</button>
+          <div class="volume-box">
+            <span class="vol-icon">♪</span>
+            <input type="range" class="volume-slider" id="volumeSlider" min="0" max="1" step="0.01" value="0.65"
+              title="Volume">
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <button class="palette-btn" id="paletteBtn" title="Switch Peony Color Palette">
+      <span class="palette-indicator" id="paletteIndicator"></span>
+      <span class="palette-name" id="paletteName">Rose Coral</span>
+    </button>
+  </header>
+
+
+  <div class="envelope-dock" id="envelopeDock" title="Open Love Letter">
+    <div class="envelope-box">
+      <div class="envelope-seal">♥</div>
+    </div>
+    <div class="envelope-badge">💌 For Sabina</div>
+  </div>
+
+
+  <div class="letter-modal-backdrop" id="letterModal">
+    <div class="letter-card" id="letterCard">
+      <div class="letter-stamp-corner">
+        <div class="letter-stamp-heart">♥</div>
+        <span>Love</span>
+      </div>
+      <div class="letter-header">
+        <div class="letter-recipient" id="letterRecipient">For Sabina</div>
+        <div class="letter-date" id="letterDate">Forever & Always</div>
+      </div>
+      <div class="letter-body" id="letterBody">Dear Sabina,</div>
+      <div class="letter-sign" id="letterSign">With all my heart ♥</div>
+      <button class="letter-close-btn" id="closeLetterBtn">Fold & Keep</button>
+    </div>
+  </div>
+
+
+  <footer class="bottom-caption-veil">
+    <p class="caption-line-1" id="captionLine1"><span class="text"></span><span class="type-cursor" id="cursor1"></span>
+    </p>
+    <p class="caption-line-2" id="captionLine2"><span class="text"></span><span class="type-cursor" id="cursor2"
+        style="display: none;"></span></p>
+  </footer>
+
+
+  <audio id="customAudio" loop preload="auto" autoplay></audio>
+
+
+  <script>
+    'use strict';
+
+
+    const CONFIG = {
+
+      bouquetScale: 1.05,
+
+
+      autoRotateSpeed: 0.0045,
+
+
+      tiltX: -0.05,
+
+
+      cameraDistance: 650,
+
+
+      revealDurationMs: 4000,
+
+
+      palettes: [
+        {
+          id: 'roseCoral',
+          name: 'Rose Coral',
+          dotColor: '#ff5d8f',
+          peonies: ['#ff5d8f', '#ff85a1', '#fbb1bd', '#ffe5ec'],
+          cores: ['#ffd166', '#fff3b0'],
+          accent: '#ff5d8f'
+        },
+        {
+          id: 'creamWhite',
+          name: 'Cream White',
+          dotColor: '#ffffff',
+          peonies: ['#ffffff', '#fff1e6', '#fad2e1', '#f8edeb'],
+          cores: ['#f4a261', '#ffe8d6'],
+          accent: '#fad2e1'
+        },
+        {
+          id: 'berryMagenta',
+          name: 'Berry Magenta',
+          dotColor: '#e63946',
+          peonies: ['#e63946', '#ff4d6d', '#ff758f', '#ffb3c1'],
+          cores: ['#ffca3a', '#fff1d0'],
+          accent: '#ff4d6d'
+        }
+      ],
+
+
+      texts: {
+        mainLine: "",
+        dedicationLine: "For Sabina ♥"
+      },
+
+
+      letter: {
+        recipient: "For Sabina ♥",
+        date: "Forever & Always",
+        body: "Dear Sabina,\nI've loved you since the first day we met.\nAnd this love is growing every day.\nI am very glad that I was lucky enough\nto meet someone like you.\nThe person who is important to me\nThe man I dream about the future with\nThe person whose mood is important to me.\nThe man whose word is law to me.\nThe person I think about even in the most\ninteresting places and events.\nThe person I miss the most.\nYou are everything to me.\nFor you, I'm ready to move mountains\nand get the stars out of the sky.\nI love you like you love me, I can't live a day without you.",
+        signature: "Your Yerzhan ♥"
+      },
+
+
+      music: {
+
+
+        audioSrc: "song_for_sabi.mp3",
+
+
+        vinylPhoto: "our_photo.jpeg",
+
+
+        trackTitle: "Sabina's Melody",
+        artist: "For Sabina",
+
+
+        defaultVolume: 0.65,
+
+
+        autoPlayOnFirstClick: true
+      }
+    };
+
+
+    const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+    const lerp = (a, b, t) => a + (b - a) * t;
+    const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
+    const easeInOutQuad = (t) => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+
+
+    function createRng(seedVal) {
+      let s = (seedVal | 0) || 12345;
+      return () => {
+        s = (s + 0x6D2B79F5) | 0;
+        let t = Math.imul(s ^ (s >>> 15), 1 | s);
+        t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+
+
+    const scenePoints = [];
+
+
+    function createPeonyPoints(center, radius, seed, flowerIndex, facingDir) {
+      const rng = createRng(seed);
+      const points = [];
+
+
+      const fLen = Math.hypot(facingDir.x, facingDir.y, facingDir.z) || 1;
+      const f = { x: facingDir.x / fLen, y: facingDir.y / fLen, z: facingDir.z / fLen };
+
+
+      let rx = -f.z;
+      let ry = 0;
+      let rz = f.x;
+      let rLen = Math.hypot(rx, rz);
+      if (rLen < 0.001) {
+        rx = 1; ry = 0; rz = 0;
+      } else {
+        rx /= rLen; rz /= rLen;
+      }
+
+      const ux = f.y * rz - f.z * ry;
+      const uy = f.z * rx - f.x * rz;
+      const uz = f.x * ry - f.y * rx;
+
+
+      const spin = (facingDir.spin !== undefined) ? facingDir.spin : (rng() * Math.PI * 2);
+      const cosS = Math.cos(spin);
+      const sinS = Math.sin(spin);
+
+      const right = {
+        x: rx * cosS + ux * sinS,
+        y: ry * cosS + uy * sinS,
+        z: rz * cosS + uz * sinS
+      };
+      const up = {
+        x: -rx * sinS + ux * cosS,
+        y: -ry * sinS + uy * cosS,
+        z: -rz * sinS + uz * cosS
+      };
+
+      const basis = { right, up, forward: f };
+
+      function toWorldNormal(nlx, nly, nlz) {
+        return {
+          x: right.x * nlx + up.x * nly + f.x * nlz,
+          y: right.y * nlx + up.y * nly + f.y * nlz,
+          z: right.z * nlx + up.z * nly + f.z * nlz
+        };
+      }
+
+
+      const budR = radius * 0.28;
+
+
+
+      const coreR = 0.16 * radius;
+      const coreChars = ['@', '#', '*'];
+      const coreCount = 38;
+      for (let i = 0; i < coreCount; i++) {
+        const u = rng();
+        const v = rng();
+        const theta = u * 2 * Math.PI;
+        const phi = Math.acos(2 * v - 1);
+        const r = coreR * Math.cbrt(rng());
+        const lx = r * Math.sin(phi) * Math.cos(theta);
+        const ly = r * Math.sin(phi) * Math.sin(theta);
+        const lz = -Math.abs(r * Math.cos(phi)) * 0.5;
+
+
+        const closedLx = lx * 0.22;
+        const closedLy = ly * 0.22;
+        const closedLz = -budR * 0.4;
+
+        const openNorm = toWorldNormal(lx / (r || 1), ly / (r || 1), 0.85);
+        const closedNorm = toWorldNormal(0, 0, 1);
+
+        points.push({
+          group: 'flower',
+          subType: 'core',
+          flowerIdx: flowerIndex,
+          centerX: center.x,
+          centerY: center.y,
+          centerZ: center.z,
+          basis: basis,
+          openLx: lx,
+          openLy: ly,
+          openLz: lz,
+          closedLx: closedLx,
+          closedLy: closedLy,
+          closedLz: closedLz,
+          colorRole: 'core',
+          colorIndex: i % 2,
+          baseChar: coreChars[Math.floor(rng() * coreChars.length)],
+          budChar: '*',
+          phase: rng() * Math.PI * 2,
+          openDelay: 0.44,
+          openSpan: 0.52,
+          openNorm: openNorm,
+          closedNorm: closedNorm,
+          normal: openNorm
+        });
+      }
+
+
+
+      const innerLayers = 3;
+      const innerChars = ['O', '0', '%', '&', '='];
+      for (let layer = 0; layer < innerLayers; layer++) {
+        const layerFrac = (layer + 1) / innerLayers;
+        const rLayer = radius * (0.22 + layerFrac * 0.30);
+        const petals = 5 + layer * 2;
+        const pointsPerPetal = 7;
+
+        for (let p = 0; p < petals; p++) {
+          const petalBaseAngle = (p / petals) * 2 * Math.PI + (layer * 0.4);
+          for (let step = 1; step <= pointsPerPetal; step++) {
+            const t = step / pointsPerPetal;
+            const r = rLayer * t;
+
+            const lz = -r * 0.45 + Math.pow(t, 2) * (radius * 0.22);
+            const wave = Math.sin(petalBaseAngle * 4 + layer) * 0.12 * r;
+            const lx = (r + wave) * Math.cos(petalBaseAngle + (rng() - 0.5) * 0.14);
+            const ly = (r + wave) * Math.sin(petalBaseAngle + (rng() - 0.5) * 0.14);
+
+
+            const rDist = Math.hypot(lx, ly);
+            const ang = Math.atan2(ly, lx);
+            const closedR = Math.min(budR * 0.68, rDist * 0.26);
+            const closedLx = closedR * Math.cos(ang);
+            const closedLy = closedR * Math.sin(ang);
+            const closedLz = -budR * 0.15 + Math.pow(closedR / (budR * 0.68), 2) * (budR * 0.12);
+
+            const openNorm = toWorldNormal(lx / (r || 1), ly / (r || 1), 0.65);
+            const closedNorm = toWorldNormal(closedLx / (closedR || 1), closedLy / (closedR || 1), 0.7);
+
+            points.push({
+              group: 'flower',
+              subType: 'inner',
+              flowerIdx: flowerIndex,
+              centerX: center.x,
+              centerY: center.y,
+              centerZ: center.z,
+              basis: basis,
+              openLx: lx,
+              openLy: ly,
+              openLz: lz,
+              closedLx: closedLx,
+              closedLy: closedLy,
+              closedLz: closedLz,
+              colorRole: 'inner',
+              colorIndex: layer % 2,
+              baseChar: innerChars[Math.floor(rng() * innerChars.length)],
+              budChar: (rng() < 0.5) ? 'o' : '0',
+              phase: rng() * Math.PI * 2,
+              openDelay: 0.18 + t * 0.08,
+              openSpan: 0.66,
+              openNorm: openNorm,
+              closedNorm: closedNorm,
+              normal: openNorm
+            });
+          }
+        }
+      }
+
+
+
+      const outerLayers = 4;
+      for (let layer = 0; layer < outerLayers; layer++) {
+        const layerFrac = (layer + 1) / outerLayers;
+        const rLayer = radius * (0.55 + layerFrac * 0.45);
+        const petals = 6 + layer * 2;
+        const pointsPerPetal = 9;
+
+        for (let p = 0; p < petals; p++) {
+          const petalBaseAngle = (p / petals) * 2 * Math.PI + (layer * 0.55) + (rng() - 0.5) * 0.1;
+          for (let step = 1; step <= pointsPerPetal; step++) {
+            const t = step / pointsPerPetal;
+            const r = rLayer * t;
+
+            const lz = -Math.cos(t * Math.PI * 0.5) * radius * 0.38 + (1 - t) * (radius * 0.14);
+            const wave = Math.sin(petalBaseAngle * petals + layer * 1.3) * (0.18 * r);
+            const lx = (r + wave) * Math.cos(petalBaseAngle + (rng() - 0.5) * 0.12);
+            const ly = (r + wave) * Math.sin(petalBaseAngle + (rng() - 0.5) * 0.12);
+
+
+            const rDist = Math.hypot(lx, ly);
+            const ang = Math.atan2(ly, lx);
+            const closedR = Math.min(budR * 0.96, rDist * 0.30);
+            const closedLx = closedR * Math.cos(ang);
+            const closedLy = closedR * Math.sin(ang);
+            const closedLz = Math.cos((closedR / (budR * 0.96)) * Math.PI * 0.5) * (budR * 0.55) - budR * 0.1;
+
+            let charChoice;
+            if (t < 0.4) {
+              const dense = ['~', '(', ')', '*'];
+              charChoice = dense[Math.floor(rng() * dense.length)];
+            } else if (t < 0.75) {
+              const mid = ['+', '-', '*', '~'];
+              charChoice = mid[Math.floor(rng() * mid.length)];
+            } else {
+              const airy = [':', '.', '+', '-'];
+              charChoice = airy[Math.floor(rng() * airy.length)];
+            }
+
+            const openNorm = toWorldNormal(lx / (r || 1), ly / (r || 1), 0.55);
+            const closedNorm = toWorldNormal(closedLx / (closedR || 1), closedLy / (closedR || 1), 0.8);
+
+            const budChars = ['(', ')', 'O', 'o', '*'];
+
+            points.push({
+              group: 'flower',
+              subType: 'outer',
+              flowerIdx: flowerIndex,
+              centerX: center.x,
+              centerY: center.y,
+              centerZ: center.z,
+              basis: basis,
+              openLx: lx,
+              openLy: ly,
+              openLz: lz,
+              closedLx: closedLx,
+              closedLy: closedLy,
+              closedLz: closedLz,
+              colorRole: 'outer',
+              colorIndex: Math.min(3, Math.floor(1 + layerFrac * 2)),
+              baseChar: charChoice,
+              budChar: budChars[Math.floor(rng() * budChars.length)],
+              phase: rng() * Math.PI * 2,
+              openDelay: (1 - t) * 0.12,
+              openSpan: 0.74,
+              openNorm: openNorm,
+              closedNorm: closedNorm,
+              normal: openNorm
+            });
+          }
+        }
+      }
+
+      return points;
+    }
+
+
+
+
+
+    const flowerTimings = [
+
+      { appear: 0.18, bloomStart: 0.28, bloomDur: 0.38 },
+
+      { appear: 0.20, bloomStart: 0.31, bloomDur: 0.38 },
+
+      { appear: 0.20, bloomStart: 0.31, bloomDur: 0.38 },
+
+      { appear: 0.16, bloomStart: 0.25, bloomDur: 0.40 },
+
+      { appear: 0.22, bloomStart: 0.37, bloomDur: 0.36 },
+      { appear: 0.22, bloomStart: 0.37, bloomDur: 0.36 },
+
+      { appear: 0.24, bloomStart: 0.43, bloomDur: 0.36 },
+      { appear: 0.24, bloomStart: 0.43, bloomDur: 0.36 },
+
+      { appear: 0.25, bloomStart: 0.49, bloomDur: 0.36 },
+      { appear: 0.25, bloomStart: 0.47, bloomDur: 0.38 },
+      { appear: 0.25, bloomStart: 0.49, bloomDur: 0.36 },
+
+      { appear: 0.26, bloomStart: 0.55, bloomDur: 0.35 },
+      { appear: 0.26, bloomStart: 0.57, bloomDur: 0.35 },
+      { appear: 0.26, bloomStart: 0.57, bloomDur: 0.35 },
+      { appear: 0.26, bloomStart: 0.59, bloomDur: 0.35 }
+    ];
+
+
+    function buildBouquetScene() {
+      const rng = createRng(42);
+
+
+      const peonyConfigs = [
+
+        { x: 0, y: -130, z: 0, r: 62, dir: { x: 0, y: -0.15, z: 0.98, spin: 0.2 } },
+        { x: -46, y: -105, z: 28, r: 56, dir: { x: -0.22, y: -0.12, z: 0.96, spin: 1.1 } },
+        { x: 46, y: -105, z: 28, r: 58, dir: { x: 0.22, y: -0.12, z: 0.96, spin: 2.3 } },
+
+
+        { x: 0, y: -65, z: 58, r: 60, dir: { x: 0, y: 0.05, z: 0.99, spin: 0.8 } },
+
+
+        { x: -88, y: -108, z: -5, r: 50, dir: { x: -0.38, y: -0.2, z: 0.90, spin: 1.5 } },
+        { x: 88, y: -108, z: -5, r: 50, dir: { x: 0.38, y: -0.2, z: 0.90, spin: 2.8 } },
+        { x: -110, y: -55, z: 18, r: 48, dir: { x: -0.45, y: 0.0, z: 0.89, spin: 0.6 } },
+        { x: 110, y: -55, z: 18, r: 48, dir: { x: 0.45, y: 0.0, z: 0.89, spin: 1.9 } },
+
+
+        { x: -74, y: -15, z: 42, r: 46, dir: { x: -0.32, y: 0.22, z: 0.92, spin: 0.4 } },
+        { x: 0, y: -18, z: 66, r: 52, dir: { x: 0.0, y: 0.25, z: 0.96, spin: 1.7 } },
+        { x: 74, y: -15, z: 42, r: 46, dir: { x: 0.32, y: 0.22, z: 0.92, spin: 2.5 } },
+
+
+        { x: 0, y: -148, z: -38, r: 54, dir: { x: 0.0, y: -0.35, z: 0.93, spin: 0.3 } },
+        { x: -58, y: -95, z: -48, r: 48, dir: { x: -0.32, y: -0.15, z: 0.93, spin: 1.3 } },
+        { x: 58, y: -95, z: -48, r: 48, dir: { x: 0.32, y: -0.15, z: 0.93, spin: 2.2 } },
+        { x: 0, y: -45, z: -55, r: 46, dir: { x: 0.0, y: 0.1, z: 0.99, spin: 1.0 } }
+      ];
+
+
+      peonyConfigs.forEach((cfg, idx) => {
+        const pts = createPeonyPoints({ x: cfg.x, y: cfg.y, z: cfg.z }, cfg.r, 100 + idx * 77, idx, cfg.dir);
+        scenePoints.push(...pts);
+      });
+
+
+      const tieY = 165;
+      const baseY = 330;
+      const stemChars = ['|', '/', '\\', ':'];
+      const stemColors = ['#2d6a4f', '#40916c', '#52b788', '#1b4332'];
+
+      peonyConfigs.forEach((cfg, idx) => {
+
+        const tieAngle = (idx / 15) * 2 * Math.PI;
+        const tieR = 8 + (idx % 3) * 2.5;
+        const tx = Math.cos(tieAngle) * tieR;
+        const tz = Math.sin(tieAngle) * tieR;
+
+
+        const bx = tx * 1.35 + (rng() - 0.5) * 4;
+        const bz = tz * 1.35 + (rng() - 0.5) * 4;
+
+
+        const stemSteps = 34;
+        for (let s = 0; s <= stemSteps; s++) {
+          const t = s / stemSteps;
+          let px, py, pz;
+
+          if (t <= 0.68) {
+
+            const u = t / 0.68;
+            const p0x = cfg.x, p0y = cfg.y + cfg.r * 0.25, p0z = cfg.z - cfg.r * 0.2;
+            const p1x = cfg.x * 0.55, p1y = lerp(p0y, tieY, 0.45), p1z = cfg.z * 0.55;
+            const p2x = tx, p2y = tieY, p2z = tz;
+
+            px = Math.pow(1 - u, 2) * p0x + 2 * (1 - u) * u * p1x + Math.pow(u, 2) * p2x;
+            py = Math.pow(1 - u, 2) * p0y + 2 * (1 - u) * u * p1y + Math.pow(u, 2) * p2y;
+            pz = Math.pow(1 - u, 2) * p0z + 2 * (1 - u) * u * p1z + Math.pow(u, 2) * p2z;
+          } else {
+
+            const u = (t - 0.68) / 0.32;
+            px = lerp(tx, bx, u);
+            py = lerp(tieY, baseY, u);
+            pz = lerp(tz, bz, u);
+          }
+
+          scenePoints.push({
+            x: px + (rng() - 0.5) * 1.6,
+            y: py,
+            z: pz + (rng() - 0.5) * 1.6,
+            group: 'stem',
+            colorRole: 'stem',
+            colorVal: stemColors[Math.floor(rng() * stemColors.length)],
+            baseChar: stemChars[Math.floor(rng() * stemChars.length)],
+            phase: rng() * Math.PI * 2,
+            stemT: t,
+            revealOrder: 0.05 + (1 - t) * 0.22,
+            normal: { x: 0, y: 0, z: 1 }
+          });
+
+
+          if (s >= 5 && s <= 22 && s % 5 === 0) {
+            const leafSide = (s % 2 === 0) ? 1 : -1;
+            const leafLen = 28 + rng() * 18;
+            const leafChars = ['v', '<', '>', '~', '*', '+'];
+            const leafAng = Math.atan2(pz, px) + leafSide * (0.8 + rng() * 0.4);
+
+            for (let l = 1; l <= 6; l++) {
+              const lt = l / 6;
+              const lx = px + Math.cos(leafAng) * (leafLen * lt);
+              const ly = py - Math.sin(lt * Math.PI) * 9 + lt * 6;
+              const lz = pz + Math.sin(leafAng) * (leafLen * lt);
+
+              scenePoints.push({
+                x: lx, y: ly, z: lz,
+                group: 'leaf',
+                colorRole: 'leaf',
+                colorVal: stemColors[Math.floor(rng() * stemColors.length)],
+                baseChar: leafChars[Math.floor(rng() * leafChars.length)],
+                phase: rng() * Math.PI * 2,
+                revealOrder: 0.16 + (1 - t) * 0.16,
+                normal: { x: 0, y: -0.6, z: 0.8 }
+              });
+            }
+          }
+        }
+      });
+
+
+
+      const ribbonChars = ['@', '*', '~', '='];
+      const ribbonColors = ['#ffd166', '#fbb1bd', '#ffccd5', '#fcd5ce'];
+
+
+      for (let i = 0; i < 48; i++) {
+        const ang = (i / 48) * 2 * Math.PI;
+        const bandR = 15 + Math.sin(ang * 4) * 1.5;
+        scenePoints.push({
+          x: Math.cos(ang) * bandR,
+          y: tieY + (rng() - 0.5) * 5,
+          z: Math.sin(ang) * bandR,
+          group: 'ribbon',
+          colorRole: 'ribbon',
+          colorVal: ribbonColors[Math.floor(rng() * ribbonColors.length)],
+          baseChar: ribbonChars[Math.floor(rng() * ribbonChars.length)],
+          phase: rng() * Math.PI * 2,
+          revealOrder: 0.22 + rng() * 0.10,
+          normal: { x: Math.cos(ang), y: 0, z: Math.sin(ang) }
+        });
+      }
+
+
+      for (let side = -1; side <= 1; side += 2) {
+
+        for (let l = 0; l < 24; l++) {
+          const t = l / 24;
+          const loopAng = t * Math.PI * 2;
+          const lx = side * (12 + Math.sin(loopAng) * 16);
+          const ly = tieY - 2 + Math.cos(loopAng) * 10;
+          const lz = 16 + Math.sin(t * Math.PI) * 12;
+
+          scenePoints.push({
+            x: lx, y: ly, z: lz,
+            group: 'ribbon',
+            colorRole: 'ribbon',
+            colorVal: ribbonColors[Math.floor(rng() * ribbonColors.length)],
+            baseChar: ribbonChars[Math.floor(rng() * ribbonChars.length)],
+            phase: rng() * Math.PI * 2,
+            revealOrder: 0.25 + rng() * 0.08,
+            normal: { x: side * 0.6, y: -0.3, z: 0.7 }
+          });
+        }
+
+        for (let tail = 0; tail < 20; tail++) {
+          const t = tail / 20;
+          const tx = side * (6 + t * 18 + Math.sin(t * 5) * 3);
+          const ty = tieY + 6 + t * 48;
+          const tz = 16 - t * 2;
+
+          scenePoints.push({
+            x: tx, y: ty, z: tz,
+            group: 'ribbon',
+            colorRole: 'ribbon',
+            colorVal: ribbonColors[Math.floor(rng() * ribbonColors.length)],
+            baseChar: ribbonChars[Math.floor(rng() * ribbonChars.length)],
+            phase: rng() * Math.PI * 2,
+            revealOrder: 0.28 + t * 0.08,
+            normal: { x: 0, y: 0, z: 1 }
+          });
+        }
+      }
+    }
+
+
+    buildBouquetScene();
+
+
+
+    const backgroundStars = [];
+    const starChars = ['.', '+', '*'];
+    for (let i = 0; i < 75; i++) {
+      backgroundStars.push({
+        x: Math.random(),
+        y: Math.random(),
+        char: starChars[Math.floor(Math.random() * starChars.length)],
+        baseOpacity: 0.15 + Math.random() * 0.35,
+        twinkleSpeed: 0.0015 + Math.random() * 0.0035,
+        phase: Math.random() * Math.PI * 2,
+        size: 9 + Math.random() * 4
+      });
+    }
+
+
+    const clickParticles = [];
+    const particleChars = ['*', '+', '~', '.', '♥'];
+
+    function spawnParticles(screenX, screenY) {
+      const currentPal = CONFIG.palettes[currentPaletteIdx];
+      const count = 22;
+
+      for (let i = 0; i < count; i++) {
+        const ang = Math.random() * Math.PI * 2;
+        const speed = 1.5 + Math.random() * 4.2;
+        const color = (Math.random() < 0.25)
+          ? currentPal.cores[Math.floor(Math.random() * currentPal.cores.length)]
+          : currentPal.peonies[Math.floor(Math.random() * currentPal.peonies.length)];
+
+        clickParticles.push({
+          x: screenX,
+          y: screenY,
+          vx: Math.cos(ang) * speed,
+          vy: Math.sin(ang) * speed - 1.8,
+          char: particleChars[Math.floor(Math.random() * particleChars.length)],
+          color: color,
+          alpha: 1.0,
+          decay: 0.016 + Math.random() * 0.022,
+          size: 11 + Math.random() * 6,
+          spin: Math.random() * Math.PI * 2,
+          spinSpeed: (Math.random() - 0.5) * 0.15
+        });
+      }
+    }
+
+
+    const SoundEngine = (() => {
+      let audioCtx = null;
+      let masterGain = null;
+      let reverbNode = null;
+      let isPlaying = false;
+      let stepIndex = 0;
+      let nextNoteTime = 0;
+      let schedTimer = null;
+      let currentVol = CONFIG.music.defaultVolume;
+
+
+
+      const MELODY = [
+        60, 64, 67, 71, 57, 60, 64, 69, 53, 57, 60, 65, 55, 59, 62, 67,
+        72, 67, 64, 60, 69, 64, 60, 57, 65, 60, 57, 53, 67, 62, 59, 0
+      ];
+      const BASS = [48, 45, 41, 43];
+      const midiToFreq = (m) => 440 * Math.pow(2, (m - 69) / 12);
+
+
+      function createReverbBuffer(ctx) {
+        const len = ctx.sampleRate * 2.8;
+        const buf = ctx.createBuffer(2, len, ctx.sampleRate);
+        for (let c = 0; c < 2; c++) {
+          const data = buf.getChannelData(c);
+          for (let i = 0; i < len; i++) {
+            data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2.6);
+          }
+        }
+        return buf;
+      }
+
+      function initContext() {
+        if (!audioCtx) {
+          const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+          if (AudioContextClass) {
+            audioCtx = new AudioContextClass();
+            masterGain = audioCtx.createGain();
+            masterGain.gain.setValueAtTime(currentVol * 0.22, audioCtx.currentTime);
+
+            reverbNode = audioCtx.createConvolver();
+            reverbNode.buffer = createReverbBuffer(audioCtx);
+
+            masterGain.connect(reverbNode);
+            reverbNode.connect(audioCtx.destination);
+            masterGain.connect(audioCtx.destination);
+          }
+        }
+        if (audioCtx && audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+      }
+
+      function playPluck(midi, time, velocity) {
+        if (!audioCtx || !masterGain) return;
+        const freq = midiToFreq(midi);
+
+
+        const osc = audioCtx.createOscillator();
+        const noteGain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, time);
+
+
+        noteGain.gain.setValueAtTime(0.0001, time);
+        noteGain.gain.linearRampToValueAtTime(velocity, time + 0.02);
+        noteGain.gain.exponentialRampToValueAtTime(0.0001, time + 2.4);
+
+        osc.connect(noteGain);
+        noteGain.connect(masterGain);
+        osc.start(time);
+        osc.stop(time + 2.5);
+      }
+
+      function scheduler() {
+        if (!isPlaying || !audioCtx) return;
+        while (nextNoteTime < audioCtx.currentTime + 0.3) {
+          const i = stepIndex % MELODY.length;
+          const note = MELODY[i];
+          if (note > 0) {
+            playPluck(note, nextNoteTime, 0.24 - (i % 4) * 0.02);
+          }
+          if (i % 4 === 0) {
+
+            const bassNote = BASS[Math.floor(i / 4) % BASS.length];
+            playPluck(bassNote, nextNoteTime, 0.28);
+          }
+          nextNoteTime += 0.88 + (Math.random() - 0.5) * 0.03;
+          stepIndex++;
+        }
+        schedTimer = setTimeout(scheduler, 120);
+      }
+
+      return {
+        start: () => {
+          initContext();
+          isPlaying = true;
+          if (audioCtx) {
+            nextNoteTime = audioCtx.currentTime + 0.05;
+            scheduler();
+          }
+        },
+        stop: () => {
+          isPlaying = false;
+          if (schedTimer) clearTimeout(schedTimer);
+        },
+        setVolume: (val) => {
+          currentVol = clamp(val, 0, 1);
+          if (masterGain && audioCtx) {
+            masterGain.gain.setValueAtTime(currentVol * 0.22, audioCtx.currentTime);
+          }
+        },
+        isPlaying: () => isPlaying
+      };
+    })();
+
+
+    const canvas = document.getElementById('bouquetCanvas');
+    const ctx = canvas.getContext('2d', { alpha: false });
+
+
+    const customAudio = document.getElementById('customAudio');
+    const playBtn = document.getElementById('playBtn');
+    const volumeSlider = document.getElementById('volumeSlider');
+    const vinylDisc = document.getElementById('vinylDisc');
+    const tonearm = document.getElementById('tonearm');
+    const soundBars = document.getElementById('soundBars');
+    const trackTitle = document.getElementById('trackTitle');
+    const vinylPhotoImg = document.getElementById('vinylPhotoImg');
+
+
+    const paletteBtn = document.getElementById('paletteBtn');
+    const paletteIndicator = document.getElementById('paletteIndicator');
+    const paletteName = document.getElementById('paletteName');
+    let currentPaletteIdx = 0;
+
+
+    const envelopeDock = document.getElementById('envelopeDock');
+    const letterModal = document.getElementById('letterModal');
+    const letterCard = document.getElementById('letterCard');
+    const closeLetterBtn = document.getElementById('closeLetterBtn');
+    const letterRecipient = document.getElementById('letterRecipient');
+    const letterDate = document.getElementById('letterDate');
+    const letterBody = document.getElementById('letterBody');
+    const letterSign = document.getElementById('letterSign');
+
+
+    const captionLine1 = document.getElementById('captionLine1');
+    const captionLine2 = document.getElementById('captionLine2');
+    const cursor1 = document.getElementById('cursor1');
+    const cursor2 = document.getElementById('cursor2');
+    const dragHint = document.getElementById('dragHint');
+
+
+    trackTitle.textContent = CONFIG.music.trackTitle;
+    if (CONFIG.music.vinylPhoto) {
+      vinylPhotoImg.src = CONFIG.music.vinylPhoto;
+    }
+    if (CONFIG.music.audioSrc) {
+      customAudio.src = CONFIG.music.audioSrc;
+    }
+    letterRecipient.textContent = CONFIG.letter.recipient;
+    letterDate.textContent = CONFIG.letter.date;
+    letterBody.textContent = CONFIG.letter.body;
+    letterSign.textContent = CONFIG.letter.signature;
+
+
+    let isMusicPlaying = false;
+
+    function setMusicPlayback(play) {
+      isMusicPlaying = play;
+      if (isMusicPlaying) {
+        if (CONFIG.music.audioSrc) {
+          customAudio.play().catch(() => { });
+        } else {
+          SoundEngine.start();
+        }
+        vinylDisc.classList.add('is-spinning');
+        tonearm.classList.add('is-playing');
+        soundBars.classList.add('active');
+        playBtn.textContent = '❚❚';
+      } else {
+        if (CONFIG.music.audioSrc) {
+          customAudio.pause();
+        } else {
+          SoundEngine.stop();
+        }
+        vinylDisc.classList.remove('is-spinning');
+        tonearm.classList.remove('is-playing');
+        soundBars.classList.remove('active');
+        playBtn.textContent = '▶';
+      }
+    }
+
+    playBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      setMusicPlayback(!isMusicPlaying);
+    });
+
+    volumeSlider.addEventListener('input', (e) => {
+      const vol = parseFloat(e.target.value);
+      customAudio.volume = vol;
+      SoundEngine.setVolume(vol);
+    });
+
+
+    envelopeDock.addEventListener('click', (e) => {
+      e.stopPropagation();
+      letterModal.classList.add('is-open');
+      spawnParticles(e.clientX || (window.innerWidth / 2), e.clientY || (window.innerHeight / 2));
+    });
+
+    closeLetterBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      letterModal.classList.remove('is-open');
+    });
+
+    letterModal.addEventListener('click', (e) => {
+      if (e.target === letterModal) {
+        letterModal.classList.remove('is-open');
+      }
+    });
+
+
+    function applyPalette(idx) {
+      currentPaletteIdx = idx % CONFIG.palettes.length;
+      const pal = CONFIG.palettes[currentPaletteIdx];
+      paletteIndicator.style.backgroundColor = pal.dotColor;
+      paletteIndicator.style.boxShadow = `0 0 8px ${pal.dotColor}`;
+      paletteName.textContent = pal.name;
+    }
+    paletteBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      applyPalette(currentPaletteIdx + 1);
+      replayBloom();
+    });
+    applyPalette(0);
+
+    function playFlowerSparkleSound() {
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        if (!window._sparkleAudioCtx) {
+          window._sparkleAudioCtx = new AudioCtx();
+        }
+        const actx = window._sparkleAudioCtx;
+        if (actx.state === 'suspended') {
+          actx.resume();
+        }
+        const now = actx.currentTime;
+        const notes = [587.33, 659.25, 783.99, 880.0, 987.77, 1046.5, 1174.66, 1318.51, 1567.98, 1760.0];
+        const base = notes[Math.floor(Math.random() * (notes.length - 2))];
+        const triad = [base, base * 1.25, base * 1.5];
+        triad.forEach((freq, idx) => {
+          const osc = actx.createOscillator();
+          const gain = actx.createGain();
+          osc.type = idx === 1 ? 'triangle' : 'sine';
+          osc.frequency.setValueAtTime(freq, now + idx * 0.025);
+          gain.gain.setValueAtTime(0.0001, now + idx * 0.025);
+          gain.gain.linearRampToValueAtTime(0.08 / (idx + 1), now + idx * 0.025 + 0.012);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + idx * 0.025 + 0.55);
+          osc.connect(gain);
+          gain.connect(actx.destination);
+          osc.start(now + idx * 0.025);
+          osc.stop(now + idx * 0.025 + 0.6);
+        });
+      } catch (e) { }
+    }
+
+    setMusicPlayback(true);
+
+    const unlockAudio = () => {
+      if (isMusicPlaying) {
+        if (CONFIG.music.audioSrc && customAudio.paused) {
+          customAudio.play().catch(() => { });
+        } else if (!CONFIG.music.audioSrc && !SoundEngine.isPlaying()) {
+          SoundEngine.start();
+        }
+      }
+    };
+    ['pointerdown', 'touchstart', 'mousedown', 'keydown', 'scroll', 'click'].forEach(evt => {
+      window.addEventListener(evt, unlockAudio, { capture: true, once: true });
+    });
+
+
+    let viewWidth = window.innerWidth;
+    let viewHeight = window.innerHeight;
+    let dpr = 1;
+    let effectiveScale = 1.0;
+
+    function handleResize() {
+      viewWidth = window.innerWidth;
+      viewHeight = window.innerHeight;
+
+      dpr = Math.min(2, window.devicePixelRatio || 1);
+
+      canvas.width = Math.round(viewWidth * dpr);
+      canvas.height = Math.round(viewHeight * dpr);
+      canvas.style.width = viewWidth + 'px';
+      canvas.style.height = viewHeight + 'px';
+
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+
+      const baseFit = Math.min(viewWidth / 780, viewHeight / 980);
+      effectiveScale = baseFit * CONFIG.bouquetScale;
+    }
+    window.addEventListener('resize', handleResize);
+    handleResize();
+
+
+    let rotationY = 0;
+    let targetRotationVelocity = 0;
+    let isDragging = false;
+    let lastPointerX = 0;
+    let lastPointerY = 0;
+    let cameraTiltX = CONFIG.tiltX;
+
+    window.addEventListener('pointerdown', (e) => {
+
+      if (e.target.closest('#recordPlayerDock') || e.target.closest('#paletteBtn') ||
+        e.target.closest('#envelopeDock') || letterModal.classList.contains('is-open')) {
+        return;
+      }
+      isDragging = true;
+      lastPointerX = e.clientX;
+      lastPointerY = e.clientY;
+      targetRotationVelocity = 0;
+
+
+      if (!isMusicPlaying) {
+        setMusicPlayback(true);
+      }
+      playFlowerSparkleSound();
+      spawnParticles(e.clientX, e.clientY);
+    });
+
+    window.addEventListener('pointermove', (e) => {
+      if (!isDragging) return;
+      const dx = e.clientX - lastPointerX;
+      const dy = e.clientY - lastPointerY;
+      lastPointerX = e.clientX;
+      lastPointerY = e.clientY;
+
+      rotationY += dx * 0.0075;
+      targetRotationVelocity = dx * 0.0075;
+
+
+      cameraTiltX = clamp(cameraTiltX + dy * 0.0015, -0.45, 0.05);
+    });
+
+    const endDrag = () => {
+      isDragging = false;
+    };
+    window.addEventListener('pointerup', endDrag);
+    window.addEventListener('pointercancel', endDrag);
+
+
+    let typeStartTime = performance.now() + 1400;
+    let captionStarted = false;
+    let charIndex1 = 0;
+    let charIndex2 = 0;
+
+    function updateCaption(now) {
+      if (now < typeStartTime) return;
+      if (!captionStarted) {
+        captionStarted = true;
+        captionLine1.style.opacity = '1';
+      }
+
+      const mainText = CONFIG.texts.mainLine;
+      const dedText = CONFIG.texts.dedicationLine;
+
+      if (charIndex1 < mainText.length) {
+        if (Math.random() < 0.65) {
+          charIndex1++;
+          captionLine1.querySelector('.text').textContent = mainText.slice(0, charIndex1);
+        }
+      } else if (charIndex2 < dedText.length) {
+        cursor1.style.display = 'none';
+        cursor2.style.display = 'inline-block';
+        captionLine2.style.opacity = '1';
+        if (Math.random() < 0.55) {
+          charIndex2++;
+          captionLine2.querySelector('.text').textContent = dedText.slice(0, charIndex2);
+        }
+      }
+    }
+
+
+    let bloomStartTime = performance.now();
+    let lastFrameTime = performance.now();
+
+    function replayBloom() {
+      bloomStartTime = performance.now();
+      captionStarted = false;
+      charIndex1 = 0;
+      charIndex2 = 0;
+      typeStartTime = bloomStartTime + 1400;
+      captionLine1.querySelector('.text').textContent = '';
+      captionLine2.querySelector('.text').textContent = '';
+      captionLine1.style.opacity = '0';
+      captionLine2.style.opacity = '0';
+      cursor1.style.display = 'inline-block';
+      cursor2.style.display = 'none';
+      spawnParticles(viewWidth * 0.5, viewHeight * 0.4);
+    }
+
+
+    window.addEventListener('keydown', (e) => {
+      const k = e.key.toLowerCase();
+      if (k === ' ' || k === 'r') {
+        if (!letterModal.classList.contains('is-open')) {
+          replayBloom();
+        }
+      }
+    });
+
+
+    const lightDir = { x: -0.32, y: -0.42, z: 0.84 };
+    const lightLen = Math.hypot(lightDir.x, lightDir.y, lightDir.z);
+    lightDir.x /= lightLen;
+    lightDir.y /= lightLen;
+    lightDir.z /= lightLen;
+
+    function renderFrame(now) {
+      requestAnimationFrame(renderFrame);
+
+      const elapsed = now - bloomStartTime;
+
+
+      const timeline = clamp(elapsed / CONFIG.revealDurationMs, 0, 1);
+
+
+      if (!isDragging) {
+        rotationY += targetRotationVelocity;
+        targetRotationVelocity *= 0.93;
+        rotationY += CONFIG.autoRotateSpeed;
+      }
+
+
+      ctx.fillStyle = '#05070d';
+      ctx.fillRect(0, 0, viewWidth, viewHeight);
+
+
+      const bgGrad = ctx.createRadialGradient(
+        viewWidth * 0.5, viewHeight * 0.42, 40,
+        viewWidth * 0.5, viewHeight * 0.42, Math.max(viewWidth, viewHeight) * 0.65
+      );
+      bgGrad.addColorStop(0, '#121832');
+      bgGrad.addColorStop(0.55, '#070914');
+      bgGrad.addColorStop(1, '#04050a');
+      ctx.fillStyle = bgGrad;
+      ctx.fillRect(0, 0, viewWidth, viewHeight);
+
+
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      for (let s = 0; s < backgroundStars.length; s++) {
+        const star = backgroundStars[s];
+        const twinkle = Math.sin(now * star.twinkleSpeed + star.phase);
+        const starAlpha = clamp(star.baseOpacity + twinkle * 0.18, 0.05, 0.85);
+        ctx.font = `${star.size}px Menlo, monospace`;
+        ctx.fillStyle = `rgba(220, 230, 255, ${starAlpha.toFixed(3)})`;
+        ctx.fillText(star.char, star.x * viewWidth, star.y * viewHeight);
+      }
+
+
+      const cosY = Math.cos(rotationY);
+      const sinY = Math.sin(rotationY);
+      const cosX = Math.cos(cameraTiltX);
+      const sinX = Math.sin(cameraTiltX);
+
+      const centerX = viewWidth * 0.5;
+
+      const centerY = viewHeight * 0.46;
+      const currentPal = CONFIG.palettes[currentPaletteIdx];
+
+      const visiblePoints = [];
+
+      for (let i = 0; i < scenePoints.length; i++) {
+        const pt = scenePoints[i];
+
+        let px, py, pz;
+        let ptNorm = pt.normal;
+        let ptChar = pt.baseChar;
+
+        if (pt.group === 'stem') {
+
+          if (timeline < pt.revealOrder) continue;
+          px = pt.x * effectiveScale;
+          py = pt.y * effectiveScale;
+          pz = pt.z * effectiveScale;
+        } else if (pt.group === 'leaf' || pt.group === 'ribbon') {
+          if (timeline < pt.revealOrder) continue;
+          px = pt.x * effectiveScale;
+          py = pt.y * effectiveScale;
+          pz = pt.z * effectiveScale;
+        } else if (pt.group === 'flower') {
+          const timing = flowerTimings[pt.flowerIdx];
+
+          if (timeline < timing.appear) continue;
+
+
+          const flowerProg = clamp((timeline - timing.bloomStart) / timing.bloomDur, 0, 1);
+
+
+          const pProg = clamp((flowerProg - pt.openDelay) / pt.openSpan, 0, 1);
+          const pEase = easeOutCubic(pProg);
+
+
+          if (pt.subType === 'core' && flowerProg < 0.38) continue;
+
+
+          const curLx = lerp(pt.closedLx, pt.openLx, pEase);
+          const curLy = lerp(pt.closedLy, pt.openLy, pEase);
+          const curLz = lerp(pt.closedLz, pt.openLz, pEase);
+
+
+          const b = pt.basis;
+          const worldX = pt.centerX + b.right.x * curLx + b.up.x * curLy + b.forward.x * curLz;
+          const worldY = pt.centerY + b.right.y * curLx + b.up.y * curLy + b.forward.y * curLz;
+          const worldZ = pt.centerZ + b.right.z * curLx + b.up.z * curLy + b.forward.z * curLz;
+
+          px = worldX * effectiveScale;
+          py = worldY * effectiveScale;
+          pz = worldZ * effectiveScale;
+
+
+          if (pt.closedNorm && pt.openNorm) {
+            ptNorm = {
+              x: lerp(pt.closedNorm.x, pt.openNorm.x, pEase),
+              y: lerp(pt.closedNorm.y, pt.openNorm.y, pEase),
+              z: lerp(pt.closedNorm.z, pt.openNorm.z, pEase)
+            };
+          }
+
+
+          if (pEase < 0.45 && pt.budChar) {
+            ptChar = pt.budChar;
+          }
+        }
+
+
+        const x1 = px * cosY + pz * sinY;
+        const z1 = -px * sinY + pz * cosY;
+
+
+        const y2 = py * cosX - z1 * sinX;
+        const z2 = py * sinX + z1 * cosX;
+
+
+        const denom = Math.max(120, CONFIG.cameraDistance + z2);
+        const factor = CONFIG.cameraDistance / denom;
+        const screenX = centerX + x1 * factor;
+        const screenY = centerY + y2 * factor;
+
+
+        let lightFactor = 0.75;
+        if (ptNorm) {
+          const nx = ptNorm.x * cosY + ptNorm.z * sinY;
+          const nz = -ptNorm.x * sinY + ptNorm.z * cosY;
+          const ny = ptNorm.y * cosX - nz * sinX;
+          const dot = nx * lightDir.x + ny * lightDir.y + nz * lightDir.z;
+          lightFactor = clamp(0.38 + 0.62 * Math.max(0, dot), 0.35, 1.0);
+        }
+
+
+        let colorStr;
+        if (pt.group === 'flower') {
+          if (pt.colorRole === 'core') {
+            colorStr = currentPal.cores[pt.colorIndex % currentPal.cores.length];
+          } else if (pt.colorRole === 'inner') {
+            colorStr = currentPal.peonies[pt.colorIndex % 2];
+          } else {
+            colorStr = currentPal.peonies[pt.colorIndex % currentPal.peonies.length];
+          }
+        } else {
+          colorStr = pt.colorVal;
+        }
+
+        visiblePoints.push({
+          screenX,
+          screenY,
+          rz: z2,
+          factor,
+          char: ptChar,
+          group: pt.group,
+          subType: pt.subType,
+          color: colorStr,
+          lightFactor
+        });
+      }
+
+
+      visiblePoints.sort((a, b) => b.rz - a.rz);
+
+
+      const baseFontSize = 13.5;
+      for (let i = 0; i < visiblePoints.length; i++) {
+        const p = visiblePoints[i];
+        const fontSize = Math.max(7, Math.round(baseFontSize * p.factor * effectiveScale * 1.15));
+        ctx.font = `${fontSize}px Menlo, Monaco, Consolas, monospace`;
+
+        ctx.fillStyle = p.color;
+
+        if (p.subType === 'core') {
+          ctx.shadowColor = p.color;
+          ctx.shadowBlur = 7;
+        } else if (p.lightFactor > 0.78) {
+          ctx.shadowColor = p.color;
+          ctx.shadowBlur = 4;
+        } else {
+          ctx.shadowBlur = 0;
+        }
+
+        ctx.fillText(p.char, p.screenX, p.screenY);
+      }
+      ctx.shadowBlur = 0;
+
+
+      for (let p = clickParticles.length - 1; p >= 0; p--) {
+        const pt = clickParticles[p];
+        pt.x += pt.vx;
+        pt.y += pt.vy;
+        pt.vy += 0.08;
+        pt.vx *= 0.985;
+        pt.alpha -= pt.decay;
+        pt.spin += pt.spinSpeed;
+
+        if (pt.alpha <= 0) {
+          clickParticles.splice(p, 1);
+          continue;
+        }
+
+        ctx.save();
+        ctx.translate(pt.x, pt.y);
+        ctx.rotate(pt.spin);
+        ctx.font = `${Math.round(pt.size)}px Menlo, monospace`;
+        ctx.fillStyle = pt.color;
+        ctx.globalAlpha = clamp(pt.alpha, 0, 1);
+        ctx.shadowColor = pt.color;
+        ctx.shadowBlur = 6;
+        ctx.fillText(pt.char, 0, 0);
+        ctx.restore();
+      }
+      ctx.globalAlpha = 1.0;
+
+
+      updateCaption(now);
+    }
+
+
+    requestAnimationFrame(renderFrame);
+
+  </script>
+</body>
+
+</html>
